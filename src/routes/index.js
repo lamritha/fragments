@@ -2,6 +2,9 @@
 
 const express = require('express');
 
+// Our authentication middleware
+const { authenticate } = require('../auth');
+
 // version and author from package.json
 const { version, author } = require('../../package.json');
 
@@ -11,8 +14,10 @@ const router = express.Router();
 /**
  * Expose all of our API routes on /v1/* to include an API version.
  * means Mount all routes from ./api under the /v1 path.
+ * Protect them all with middleware so you have to be authenticated
+ * in order to access things.
  */
-router.use(`/v1`, require('./api'));
+router.use(`/v1`, authenticate(), require('./api'));
 
 /**
  * Define a simple health check route. If the server is running

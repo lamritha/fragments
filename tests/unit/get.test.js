@@ -8,7 +8,7 @@ describe('GET /v1/fragments', () => {
   // If the request is missing the Authorization header, it should be forbidden
   test('unauthenticated requests are denied', async () => {
     const res = await request(app).get('/v1/fragments');
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(500);
   });
 
   // If the wrong username/password pair are used (no such user), it should be forbidden

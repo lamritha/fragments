@@ -18,7 +18,7 @@ const rawBody = () =>
       try {
         const { type } = contentType.parse(req.headers['content-type'] || '');
         return Fragment.isSupportedType(type);
-      } catch (err) {
+      } catch {
         return false;
       }
     },

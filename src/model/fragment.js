@@ -145,7 +145,7 @@ class Fragment {
         'application/json', 'application/yaml',
         'image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/gif',
       ].includes(type);
-    } catch (err) {
+    } catch {
       return false;
     }
   }

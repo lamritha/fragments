@@ -29,11 +29,13 @@ app.use(cors());
 app.use(compression());
 
 // Define our routes means Use the routes defined in the routes module for requests starting at /
-app.use('/', require('./routes'));
+
 
 // Set up our passport authentication middleware
 passport.use(authenticate.strategy());
 app.use(passport.initialize());
+
+app.use('/', require('./routes'));
 
 // Add 404 middleware to handle any requests for resources that can't be found
 app.use((req, res) => {

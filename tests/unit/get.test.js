@@ -1,17 +1,13 @@
-// tests/unit/get.test.js
-
+// Integration tests for GET /v1/fragments
 const request = require('supertest');
-
 const app = require('../../src/app');
 
 describe('GET /v1/fragments', () => {
-  // If the request is missing the Authorization header, it should be forbidden
   test('unauthenticated requests are denied', async () => {
     const res = await request(app).get('/v1/fragments');
     expect(res.statusCode).toBe(401);
   });
 
-  // If the wrong username/password pair are used (no such user), it should be forbidden
   test('incorrect credentials are denied', async () => {
     const res = await request(app)
       .get('/v1/fragments')
@@ -19,7 +15,6 @@ describe('GET /v1/fragments', () => {
     expect(res.statusCode).toBe(401);
   });
 
-  // Using a valid username/password pair should give a success result with a .fragments array
   test('authenticated users get a fragments array', async () => {
     const res = await request(app)
       .get('/v1/fragments')
@@ -29,5 +24,17 @@ describe('GET /v1/fragments', () => {
     expect(Array.isArray(res.body.fragments)).toBe(true);
   });
 
-  // TODO: we'll need to add tests to check the contents of the fragments array later
+  test('authenticated users get array containing created fragment id', async () => {
+    const postRes = await request(app)
+      .post('/v1/fragments')
+      .auth('test-user1@fragments-testing.com', 'test-password1')
+      .set('Content-Type', 'text/plain')
+      .send('hello');
+
+    const getRes = await request(app)
+      .get('/v1/fragments')
+      .auth('test-user1@fragments-testing.com', 'test-password1');
+
+    expect(getRes.body.fragments).toContain(postRes.body.fragment.id);
+  });
 });

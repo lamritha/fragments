@@ -1,11 +1,7 @@
-// src/logger.js
-
-// Use `info` as our standard log level if not specified
 const options = { level: process.env.FRAGMENTS_LOG_LEVEL || 'info' };
 
-// If we're doing `debug` logging, make the logs easier to read
+// Pretty-print logs when running at debug level
 if (options.level === 'debug') {
-  // https://github.com/pinojs/pino-pretty
   options.transport = {
     target: 'pino-pretty',
     options: {
@@ -14,6 +10,4 @@ if (options.level === 'debug') {
   };
 }
 
-// Create and export a Pino Logger instance:
-// https://getpino.io/#/docs/api?id=logger
 module.exports = require('pino')(options);

@@ -1,3 +1,4 @@
+// Unit tests for email hashing (used as ownerId)
 const hash = require('../../src/hash');
 
 describe('hash()', () => {

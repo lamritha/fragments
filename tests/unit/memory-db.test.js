@@ -1,10 +1,9 @@
-// Fix this path to point to your project's `memory-db.js` source file
+// Unit tests for the in-memory key/value store used by the data layer
 const MemoryDB = require('../../src/model/data/memory/memory-db');
 
 describe('memory-db', () => {
   let db;
 
-  // Each test will get its own, empty database instance
   beforeEach(() => {
     db = new MemoryDB();
   });
@@ -38,7 +37,6 @@ describe('memory-db', () => {
     await db.put('a', 'a', { value: 1 });
     await db.put('a', 'b', { value: 2 });
     await db.put('a', 'c', { value: 3 });
-
     const results = await db.query('a');
     expect(Array.isArray(results)).toBe(true);
     expect(results).toEqual([{ value: 1 }, { value: 2 }, { value: 3 }]);
@@ -48,7 +46,6 @@ describe('memory-db', () => {
     await db.put('b', 'a', { value: 1 });
     await db.put('b', 'b', { value: 2 });
     await db.put('b', 'c', { value: 3 });
-
     const results = await db.query('a');
     expect(Array.isArray(results)).toBe(true);
     expect(results).toEqual([]);

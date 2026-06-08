@@ -1,3 +1,4 @@
+// Integration tests for POST /v1/fragments
 const request = require('supertest');
 const app = require('../../src/app');
 

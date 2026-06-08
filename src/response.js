@@ -1,33 +1,12 @@
-// src/response.js
-
-/**
- * A successful response looks like:
- *
- * {
- *   "status": "ok",
- *   ...
- * }
- */
+// Standard JSON envelope for successful API responses
 module.exports.createSuccessResponse = function (data) {
   return {
     status: 'ok',
-    // Use the spread operator to clone `data` into our object, see:
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax#spread_in_object_literals
     ...data,
   };
 };
 
-/**
- * An error response looks like:
- *
- * {
- *   "status": "error",
- *   "error": {
- *     "code": 400,
- *     "message": "invalid request, missing ...",
- *   }
- * }
- */
+// Standard JSON envelope for error responses
 module.exports.createErrorResponse = function (code, message) {
   return {
     status: 'error',

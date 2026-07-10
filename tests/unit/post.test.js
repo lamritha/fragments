@@ -60,4 +60,26 @@ describe('POST /v1/fragments', () => {
       .send('some data');
     expect(res.statusCode).toBe(415);
   });
+
+
+  test('authenticated user can create a markdown fragment', async () => {
+    const res = await request(app)
+      .post('/v1/fragments')
+      .auth('test-user1@fragments-testing.com', 'test-password1')
+      .set('Content-Type', 'text/markdown')
+      .send('# Hello');
+    expect(res.statusCode).toBe(201);
+    expect(res.body.fragment.type).toBe('text/markdown');
+  });
+
+  test('authenticated user can create a json fragment', async () => {
+    const res = await request(app)
+      .post('/v1/fragments')
+      .auth('test-user1@fragments-testing.com', 'test-password1')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ hello: 'world' }));
+    expect(res.statusCode).toBe(201);
+    expect(res.body.fragment.type).toBe('application/json');
+  });
+
 });

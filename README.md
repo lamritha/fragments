@@ -9,6 +9,7 @@ Fragments back-end API — a REST microservice for storing and retrieving user-o
 - Node.js 20+
 - npm
 - Git
+- Docker (for containerized builds and deployment)
 - `curl` (on Windows PowerShell, use `curl.exe`, not `curl`)
 - `jq` (optional, for JSON pretty-printing in the terminal)
 
@@ -64,18 +65,21 @@ curl.exe -u user@example.com:password http://localhost:8080/v1/fragments
 
 ### Public
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/` | Health check — returns service status, version, author, and timestamp |
+| Method | Path | Description                                                           |
+| ------ | ---- | --------------------------------------------------------------------- |
+| `GET`  | `/`  | Health check — returns service status, version, author, and timestamp |
 
 ### Protected (require authentication)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/v1/fragments` | List the authenticated user's fragment IDs |
-| `GET` | `/v1/fragments?expand=1` | List full fragment metadata objects |
-| `POST` | `/v1/fragments` | Create a new fragment from the raw request body |
-| `GET` | `/v1/fragments/:id` | Return the raw fragment data with its `Content-Type` |
+| Method   | Path                     | Description                                                                                                    |
+| -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/v1/fragments`          | List the authenticated user's fragment IDs                                                                     |
+| `GET`    | `/v1/fragments?expand=1` | List full fragment metadata objects                                                                            |
+| `POST`   | `/v1/fragments`          | Create a new fragment from the raw request body                                                                |
+| `GET`    | `/v1/fragments/:id`      | Return the raw fragment data with its `Content-Type`                                                           |
+| `GET`    | `/v1/fragments/:id.ext`  | Return fragment data converted to the type indicated by the extension (e.g. `.html` converts Markdown to HTML) |
+| `GET`    | `/v1/fragments/:id/info` | Return fragment metadata only (no data)                                                                        |
+| `DELETE` | `/v1/fragments/:id`      | Delete a fragment and its data                                                                                 |
 
 Requests without valid credentials receive `401 Unauthorized`.
 
@@ -106,13 +110,33 @@ Errors use:
 
 The `Content-Type` header on `POST /v1/fragments` must be one of:
 
-| Category | MIME types |
-|----------|------------|
-| Text | `text/plain`, `text/markdown`, `text/html`, `text/csv` |
-| Structured | `application/json`, `application/yaml` |
-| Image | `image/png`, `image/jpeg`, `image/webp`, `image/avif`, `image/gif` |
+| Category   | MIME types                                                         |
+| ---------- | ------------------------------------------------------------------ |
+| Text       | `text/plain`, `text/markdown`, `text/html`, `text/csv`             |
+| Structured | `application/json`, `application/yaml`                             |
+| Image      | `image/png`, `image/jpeg`, `image/webp`, `image/avif`, `image/gif` |
 
 Unsupported types return `415 Unsupported Media Type`. Request bodies are limited to **5 MB**.
+
+### Fragment type conversions
+
+Fragments can be retrieved in a different format by appending an extension to the fragment ID:
+
+| Stored Type        | Supported Conversion Extensions          |
+| ------------------ | ---------------------------------------- |
+| `text/plain`       | `.txt`                                   |
+| `text/markdown`    | `.md`, `.html`, `.txt`                   |
+| `text/html`        | `.html`, `.txt`                          |
+| `text/csv`         | `.csv`, `.txt`, `.json`                  |
+| `application/json` | `.json`, `.yaml`, `.yml`, `.txt`         |
+| `application/yaml` | `.yaml`, `.txt`                          |
+| `image/png`        | `.png`, `.jpg`, `.webp`, `.gif`, `.avif` |
+| `image/jpeg`       | `.png`, `.jpg`, `.webp`, `.gif`, `.avif` |
+| `image/webp`       | `.png`, `.jpg`, `.webp`, `.gif`, `.avif` |
+| `image/avif`       | `.png`, `.jpg`, `.webp`, `.gif`, `.avif` |
+| `image/gif`        | `.png`, `.jpg`, `.webp`, `.gif`, `.avif` |
+
+Unsupported conversions return `415 Unsupported Media Type`.
 
 ### Create a fragment
 
@@ -145,6 +169,22 @@ curl.exe -H "Authorization: Bearer <jwt-token>" http://localhost:8080/v1/fragmen
 
 Returns the raw bytes with the fragment's stored `Content-Type` header.
 
+### Get fragment metadata
+
+```bash
+curl.exe -H "Authorization: Bearer <jwt-token>" http://localhost:8080/v1/fragments/<fragment-id>/info
+```
+
+Returns the fragment metadata object without fetching the underlying data.
+
+### Convert fragment format
+
+```bash
+curl.exe -H "Authorization: Bearer <jwt-token>" http://localhost:8080/v1/fragments/<fragment-id>.html
+```
+
+Returns the fragment data converted to the requested type. For example, a Markdown fragment returned as `.html` will be rendered to HTML using [markdown-it](https://github.com/markdown-it/markdown-it).
+
 ---
 
 ## Storage
@@ -153,23 +193,110 @@ Fragment **metadata** and **data** are stored separately behind a pluggable data
 
 ---
 
+## Docker
+
+The service is containerized using a multi-stage Docker build that produces a minimal Alpine-based production image.
+
+### Build the image
+
+```bash
+docker build -t fragments:latest .
+```
+
+### Run the container
+
+```bash
+docker run --rm --name fragments \
+  --env-file .env \
+  -p 8080:8080 \
+  fragments:latest
+```
+
+### Docker Hub
+
+The image is published to Docker Hub and automatically rebuilt on every commit to `main` via GitHub Actions CI:
+
+```bash
+docker pull lamritha/fragments:latest
+```
+
+### Amazon ECR
+
+Versioned images are also pushed to Amazon ECR via the CD workflow whenever a new git tag is created:
+
+```bash
+docker pull 529745007887.dkr.ecr.us-east-2.amazonaws.com/fragments:latest
+```
+
+---
+
+## CI/CD
+
+### Continuous Integration (`.github/workflows/ci.yml`)
+
+Runs on every push to `main`:
+
+1. **ESLint** — checks code style and quality
+2. **Dockerfile Lint** — lints the Dockerfile using [Hadolint](https://github.com/hadolint/hadolint)
+3. **Unit Tests** — runs the full Jest test suite
+4. **Build and Push to Docker Hub** — builds and pushes the image tagged with the commit SHA, `main`, and `latest`
+
+### Continuous Delivery (`.github/workflows/cd.yml`)
+
+Runs whenever a new git tag starting with `v` is pushed:
+
+1. Configures AWS credentials from GitHub Secrets
+2. Logs into Amazon ECR
+3. Builds and pushes the image tagged with the version tag and `latest`
+
+To create a new release:
+
+```bash
+npm version 0.8.0 -m "Release v0.8.0"
+git push origin main --tags
+```
+
+---
+
 ## Project Structure
 
 ```
 src/
-  index.js          # Entry point — loads .env, handles fatal errors, starts server
-  server.js         # HTTP server (stoppable for graceful shutdown)
-  app.js            # Express app, middleware, routes, error handlers
-  auth/             # Cognito JWT or HTTP Basic Auth (selected via env vars)
+  index.js              # Entry point — loads .env, handles fatal errors, starts server
+  server.js             # HTTP server (stoppable for graceful shutdown)
+  app.js                # Express app, middleware, routes, error handlers
+  hash.js               # SHA-256 email hashing utility
+  logger.js             # Pino logger configuration
+  response.js           # Standard success/error response helpers
+  auth/
+    index.js            # Selects Cognito or Basic Auth based on env vars
+    cognito.js          # Cognito JWT Bearer strategy
+    basic-auth.js       # HTTP Basic Auth strategy
+    auth-middleware.js  # Custom Passport callback — hashes email, attaches to req.user
   model/
-    fragment.js     # Fragment domain model
-    data/           # Storage layer (in-memory by default)
+    fragment.js         # Fragment domain model
+    data/
+      index.js          # Re-exports the active storage backend
+      memory/
+        index.js        # In-memory metadata and data store
+        memory-db.js    # Generic two-level key-value in-memory database
   routes/
-    index.js        # Health check + /v1 mount with auth
-    api/            # GET/POST /fragments, GET /fragments/:id
+    index.js            # Health check + /v1 mount with auth middleware
+    api/
+      index.js          # API router with raw body parser
+      get.js            # GET /v1/fragments
+      post.js           # POST /v1/fragments
+      get-by-id.js      # GET /v1/fragments/:id and GET /v1/fragments/:id.ext
+      get-by-id-info.js # GET /v1/fragments/:id/info
 tests/
-  unit/             # Jest unit and integration tests
-  .htpasswd         # Test credentials for Basic Auth
+  unit/                 # Jest unit and integration tests
+  .htpasswd             # Test credentials for Basic Auth
+Dockerfile              # Multi-stage Alpine production build
+.dockerignore           # Files excluded from the Docker build context
+.github/
+  workflows/
+    ci.yml              # CI: lint, test, build and push to Docker Hub
+    cd.yml              # CD: build and push to Amazon ECR on git tag
 ```
 
 ---
@@ -191,6 +318,7 @@ PORT=8080
 FRAGMENTS_LOG_LEVEL=debug
 AWS_COGNITO_POOL_ID=your_pool_id
 AWS_COGNITO_CLIENT_ID=your_client_id
+API_URL=http://localhost:8080
 ```
 
 **Or HTTP Basic Auth (local dev without Cognito):**
@@ -201,32 +329,30 @@ FRAGMENTS_LOG_LEVEL=debug
 HTPASSWD_FILE=path/to/.htpasswd
 ```
 
-A `.env.debug` template with placeholder Cognito values is included for reference.
-
 ### Environment variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PORT` | No | HTTP port (default `8080`) |
-| `FRAGMENTS_LOG_LEVEL` | No | Log level: `info`, `debug`, or `silent` (default `info`) |
-| `AWS_COGNITO_POOL_ID` | Cognito auth | Amazon Cognito User Pool ID |
-| `AWS_COGNITO_CLIENT_ID` | Cognito auth | Cognito app client ID |
-| `HTPASSWD_FILE` | Basic auth | Path to an htpasswd file (non-production only) |
-| `API_URL` | No | Base URL used in the `Location` header on fragment creation (defaults to request host) |
+| Variable                | Required     | Description                                                                            |
+| ----------------------- | ------------ | -------------------------------------------------------------------------------------- |
+| `PORT`                  | No           | HTTP port (default `8080`)                                                             |
+| `FRAGMENTS_LOG_LEVEL`   | No           | Log level: `info`, `debug`, or `silent` (default `info`)                               |
+| `AWS_COGNITO_POOL_ID`   | Cognito auth | Amazon Cognito User Pool ID                                                            |
+| `AWS_COGNITO_CLIENT_ID` | Cognito auth | Cognito app client ID                                                                  |
+| `HTPASSWD_FILE`         | Basic auth   | Path to an htpasswd file (non-production only)                                         |
+| `API_URL`               | No           | Base URL used in the `Location` header on fragment creation (defaults to request host) |
 
 ---
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm start` | Start the API in normal mode (`node src/index.js`) |
-| `npm run dev` | Start with nodemon and debug logging — restarts on file changes |
-| `npm run debug` | Same as `dev`, plus Node inspector on port `9229` for breakpoints |
-| `npm test` | Run the Jest test suite (uses `env.jest` for auth config) |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run coverage` | Run tests with coverage report (80% line threshold) |
-| `npm run lint` | Run ESLint on `src/` and `tests/` |
+| Script               | Description                                                       |
+| -------------------- | ----------------------------------------------------------------- |
+| `npm start`          | Start the API in normal mode (`node src/index.js`)                |
+| `npm run dev`        | Start with nodemon and debug logging — restarts on file changes   |
+| `npm run debug`      | Same as `dev`, plus Node inspector on port `9229` for breakpoints |
+| `npm test`           | Run the Jest test suite (uses `env.jest` for auth config)         |
+| `npm run test:watch` | Run tests in watch mode                                           |
+| `npm run coverage`   | Run tests with coverage report (80% line threshold)               |
+| `npm run lint`       | Run ESLint on `src/` and `tests/`                                 |
 
 ---
 
@@ -253,25 +379,6 @@ Expected:
 - `200 OK` with a valid token
 - `401 Unauthorized` without a token
 
-### Pretty-print JSON
-
-If `jq` is installed:
-
-```bash
-curl.exe -s localhost:8080/ | jq
-```
-
-### View headers
-
-```bash
-curl.exe -i localhost:8080/
-```
-
-Expected headers include:
-
-- `Cache-Control: no-cache`
-- CORS headers (cross-origin requests are allowed)
-
 ---
 
 ## Testing
@@ -297,3 +404,4 @@ Test users (defined in `tests/.htpasswd`):
 - The server uses [stoppable](https://www.npmjs.com/package/stoppable) for graceful shutdown (used in tests).
 - Security middleware includes Helmet, CORS, and compression.
 - User emails are never stored directly; a SHA-256 hash is used as `ownerId`.
+- The in-memory database does not persist across restarts — AWS DynamoDB and S3 integration is planned for a future release.

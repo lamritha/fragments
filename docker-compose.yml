@@ -1,0 +1,41 @@
+# docker-compose.yml
+
+services:
+  # Fragments microservice API server
+  fragments:
+    # Use a proper init process (tini)
+    init: true
+    # Build the Docker Image using the Dockerfile
+    build: .
+    # Environment variables
+    environment:
+      - NODE_ENV=development
+      - API_URL=http://localhost:8080
+      - HTPASSWD_FILE=tests/.htpasswd
+      - FRAGMENTS_LOG_LEVEL=${FRAGMENTS_LOG_LEVEL:-info}
+      - AWS_COGNITO_POOL_ID=
+      - AWS_COGNITO_CLIENT_ID=
+      - AWS_REGION=us-east-1
+      - AWS_S3_ENDPOINT_URL=http://ministack:4566
+      - AWS_DYNAMODB_ENDPOINT_URL=http://dynamodb-local:8000
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME:-fragments}
+      - AWS_DYNAMODB_TABLE_NAME=${AWS_DYNAMODB_TABLE_NAME:-fragments}
+    # Ports to publish
+    ports:
+      - '8080:8080'
+
+  # DynamoDB Local
+  dynamodb-local:
+    image: amazon/dynamodb-local
+    ports:
+      - '8000:8000'
+    command: ['-jar', 'DynamoDBLocal.jar', '-inMemory']
+
+  # MiniStack for S3
+  ministack:
+    image: ministackorg/ministack
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=s3
+      - MINISTACK_REGION=us-east-1

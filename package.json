@@ -5,6 +5,7 @@
   "description": "Fragments back-end API",
   "scripts": {
     "test:watch": "jest -c jest.config.js --runInBand --watch --",
+    "test:integration": "hurl --test --glob \"tests/integration/**/*.hurl\"",
     "test": "jest -c jest.config.js --runInBand --",
     "coverage": "jest -c jest.config.js --runInBand --coverage",
     "lint": "eslint \"./src/**/*.js\" \"tests/**/*.js\"",
@@ -20,6 +21,7 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@orangeopensource/hurl": "^8.0.2",
     "cross-env": "^10.1.0",
     "eslint": "^10.3.0",
     "globals": "^17.6.0",

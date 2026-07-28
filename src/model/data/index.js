@@ -1,2 +1,12 @@
-// Data layer entry point — swap this to change storage backend (e.g. S3 + DynamoDB)
-module.exports = require('./memory');
+// src/model/data/index.js
+
+const logger = require('../../logger');
+
+// If the environment sets an AWS Region, we'll use AWS storage
+// services (S3, DynamoDB); otherwise, we'll use an in-memory db.
+const { AWS_REGION } = process.env;
+if (!AWS_REGION) {
+  logger.warn('No AWS_REGION environment variable set. Using MemoryDB vs. AWS storage');
+}
+
+module.exports = AWS_REGION ? require('./aws') : require('./memory');

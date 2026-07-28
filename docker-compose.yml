@@ -16,6 +16,8 @@ services:
       - AWS_COGNITO_POOL_ID=
       - AWS_COGNITO_CLIENT_ID=
       - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
       - AWS_S3_ENDPOINT_URL=http://ministack:4566
       - AWS_DYNAMODB_ENDPOINT_URL=http://dynamodb-local:8000
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME:-fragments}

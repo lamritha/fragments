@@ -17,6 +17,6 @@ module.exports = async (req, res, next) => {
     res.status(200).json(createSuccessResponse());
   } catch (err) {
     logger.warn({ err, user, id }, 'Error deleting fragment');
-    return next(createErrorResponse(404, err.message));
+    return res.status(404).json(createErrorResponse(404, err.message));
   }
 };

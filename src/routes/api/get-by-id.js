@@ -1,6 +1,7 @@
 const path = require('path');
 const mime = require('mime-types');
 const MarkdownIt = require('markdown-it');
+const sharp = require('sharp');
 const { createErrorResponse } = require('../../response');
 const { Fragment } = require('../../model/fragment');
 const logger = require('../../logger');
@@ -13,14 +14,12 @@ module.exports = async (req, res) => {
     const fragment = await Fragment.byId(req.user, id);
     const data = await fragment.getData();
 
-    // No extension — return raw data with original type
     if (!ext) {
       logger.info({ id, type: fragment.type }, 'Got fragment by id');
       res.setHeader('Content-Type', fragment.type);
       return res.status(200).send(data);
     }
 
-    // Extension provided — attempt conversion
     const targetType = mime.lookup(ext);
     if (!targetType) {
       logger.warn({ ext }, 'Unknown extension');
@@ -31,9 +30,7 @@ module.exports = async (req, res) => {
       logger.warn({ mimeType: fragment.mimeType, targetType }, 'Unsupported conversion');
       return res
         .status(415)
-        .json(
-          createErrorResponse(415, `Cannot convert ${fragment.mimeType} to ${targetType}`)
-        );
+        .json(createErrorResponse(415, `Cannot convert ${fragment.mimeType} to ${targetType}`));
     }
 
     const converted = await convertFragment(data, fragment.mimeType, targetType);
@@ -53,11 +50,54 @@ function parseIdAndExt(rawId) {
 }
 
 async function convertFragment(data, fromType, toType) {
+  // Markdown conversions
   if (fromType === 'text/markdown' && toType === 'text/html') {
     const md = new MarkdownIt();
     return Buffer.from(md.render(data.toString()));
   }
 
-  // For same-type or text conversions, return as-is
+  // CSV to JSON
+  if (fromType === 'text/csv' && toType === 'application/json') {
+    const rows = data
+      .toString()
+      .trim()
+      .split('\n')
+      .map((row) => row.split(',').map((cell) => cell.trim()));
+    const headers = rows[0];
+    const json = rows.slice(1).map((row) => {
+      return headers.reduce((obj, header, i) => {
+        obj[header] = row[i] ?? '';
+        return obj;
+      }, {});
+    });
+    return Buffer.from(JSON.stringify(json));
+  }
+
+  // JSON to YAML
+  if (fromType === 'application/json' && toType === 'text/yaml') {
+    const yaml = require('js-yaml');
+    const obj = JSON.parse(data.toString());
+    return Buffer.from(yaml.dump(obj));
+  }
+
+  // Image conversions using sharp
+  if (fromType.startsWith('image/') && toType.startsWith('image/')) {
+    const imageType = toType.split('/')[1];
+    const formatMap = {
+      jpeg: 'jpeg',
+      jpg: 'jpeg',
+      png: 'png',
+      webp: 'webp',
+      gif: 'gif',
+      avif: 'avif',
+    };
+    const format = formatMap[imageType];
+    if (!format) {
+      throw new Error(`Unsupported image format: ${imageType}`);
+    }
+    return await sharp(data).toFormat(format).toBuffer();
+  }
+
+  // Text to text — return as-is
   return data;
 }

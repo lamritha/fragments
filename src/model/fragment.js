@@ -76,8 +76,8 @@ class Fragment {
       'text/markdown': ['text/markdown', 'text/html', 'text/plain'],
       'text/html': ['text/html', 'text/plain'],
       'text/csv': ['text/csv', 'text/plain', 'application/json'],
-      'application/json': ['application/json', 'application/yaml', 'text/plain'],
-      'application/yaml': ['application/yaml', 'text/plain'],
+      'application/json': ['application/json', 'text/yaml', 'text/plain'],
+      'text/yaml': ['text/yaml', 'text/plain'],
       'image/png': ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'],
       'image/jpeg': ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'],
       'image/webp': ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'],
@@ -92,7 +92,7 @@ class Fragment {
       const { type } = contentType.parse(value);
       return [
         'text/plain', 'text/markdown', 'text/html', 'text/csv',
-        'application/json', 'application/yaml',
+        'application/json', 'text/yaml',
         'image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/gif',
       ].includes(type);
     } catch {

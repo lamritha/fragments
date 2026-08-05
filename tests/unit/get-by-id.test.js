@@ -74,6 +74,63 @@ describe('GET /v1/fragments/:id', () => {
     expect(getRes.text).toContain('<h1>Hello</h1>');
   });
 
+  test('markdown fragment can be converted to txt', async () => {
+    const postRes = await request(app)
+      .post('/v1/fragments')
+      .auth('test-user1@fragments-testing.com', 'test-password1')
+      .set('Content-Type', 'text/markdown')
+      .send('# Hello');
+
+    const id = postRes.body.fragment.id;
+
+    const getRes = await request(app)
+      .get(`/v1/fragments/${id}.txt`)
+      .auth('test-user1@fragments-testing.com', 'test-password1');
+
+    expect(getRes.statusCode).toBe(200);
+    expect(getRes.headers['content-type']).toContain('text/plain');
+  });
+
+  test('csv fragment can be converted to json', async () => {
+    const postRes = await request(app)
+      .post('/v1/fragments')
+      .auth('test-user1@fragments-testing.com', 'test-password1')
+      .set('Content-Type', 'text/csv')
+      .send('name,age\nAlice,30\nBob,25');
+
+    const id = postRes.body.fragment.id;
+
+    const getRes = await request(app)
+      .get(`/v1/fragments/${id}.json`)
+      .auth('test-user1@fragments-testing.com', 'test-password1');
+
+    expect(getRes.statusCode).toBe(200);
+    expect(getRes.headers['content-type']).toContain('application/json');
+    const json = JSON.parse(getRes.text);
+    expect(json).toEqual([
+      { name: 'Alice', age: '30' },
+      { name: 'Bob', age: '25' },
+    ]);
+  });
+
+  test('json fragment can be converted to yaml', async () => {
+    const postRes = await request(app)
+      .post('/v1/fragments')
+      .auth('test-user1@fragments-testing.com', 'test-password1')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ name: 'Alice', age: 30 }));
+
+    const id = postRes.body.fragment.id;
+
+    const getRes = await request(app)
+      .get(`/v1/fragments/${id}.yaml`)
+      .auth('test-user1@fragments-testing.com', 'test-password1');
+
+    expect(getRes.statusCode).toBe(200);
+    expect(getRes.headers['content-type']).toContain('text/yaml');
+    expect(getRes.text).toContain('name: Alice');
+  });
+
   test('unsupported conversion returns 415', async () => {
     const postRes = await request(app)
       .post('/v1/fragments')

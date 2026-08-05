@@ -30,9 +30,6 @@ COPY package*.json ./
 COPY ./src ./src
 COPY ./tests/.htpasswd ./tests/.htpasswd
 
-# Run as the existing non-root `node` user instead of root
-USER node
-
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

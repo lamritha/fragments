@@ -7,7 +7,7 @@ const logger = require('../../logger');
 /**
  * Delete a fragment by id for the authenticated user
  */
-module.exports = async (req, res, next) => {
+module.exports = async (req, res) => {
   const user = req.user;
   const { id } = req.params;
 

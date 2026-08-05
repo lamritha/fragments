@@ -1,4 +1,5 @@
 const express = require('express');
+const { hostname } = require('os');
 const { authenticate } = require('../auth');
 const { version, author } = require('../../package.json');
 const { createSuccessResponse } = require('../response');
@@ -18,6 +19,7 @@ router.get('/', (req, res) => {
       githubUrl: 'https://github.com/lamritha/fragments',
       version,
       timestamp: new Date().toISOString(),
+      hostname: hostname(),
     })
   );
 });

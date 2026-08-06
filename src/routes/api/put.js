@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
     const { type } = contentType.parse(req.headers['content-type'] || '');
     logger.debug({ user, id, type }, 'Updating fragment');
 
-    const fragment = await Fragment.byId(user, id);
+    const fragment = new Fragment(await Fragment.byId(user, id));
 
     if (fragment.mimeType !== type) {
       logger.warn({ existing: fragment.mimeType, requested: type }, 'Content-Type mismatch');

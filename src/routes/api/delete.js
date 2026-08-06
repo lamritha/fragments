@@ -12,6 +12,7 @@ module.exports = async (req, res) => {
   const { id } = req.params;
 
   try {
+    await Fragment.byId(user, id);
     await Fragment.delete(user, id);
     logger.debug({ user, id }, 'Fragment deleted');
     res.status(200).json(createSuccessResponse());

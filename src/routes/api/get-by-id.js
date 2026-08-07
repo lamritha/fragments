@@ -1,5 +1,6 @@
 const path = require('path');
 const mime = require('mime-types');
+const yaml = require('js-yaml');
 const MarkdownIt = require('markdown-it');
 const sharp = require('sharp');
 const { createErrorResponse } = require('../../response');
@@ -50,13 +51,11 @@ function parseIdAndExt(rawId) {
 }
 
 async function convertFragment(data, fromType, toType) {
-  // Markdown conversions
   if (fromType === 'text/markdown' && toType === 'text/html') {
     const md = new MarkdownIt();
     return Buffer.from(md.render(data.toString()));
   }
 
-  // CSV to JSON
   if (fromType === 'text/csv' && toType === 'application/json') {
     const rows = data
       .toString()
@@ -73,14 +72,11 @@ async function convertFragment(data, fromType, toType) {
     return Buffer.from(JSON.stringify(json));
   }
 
-  // JSON to YAML
   if (fromType === 'application/json' && toType === 'text/yaml') {
-    const yaml = require('js-yaml');
     const obj = JSON.parse(data.toString());
     return Buffer.from(yaml.dump(obj));
   }
 
-  // Image conversions using sharp
   if (fromType.startsWith('image/') && toType.startsWith('image/')) {
     const imageType = toType.split('/')[1];
     const formatMap = {
@@ -98,6 +94,5 @@ async function convertFragment(data, fromType, toType) {
     return await sharp(data).toFormat(format).toBuffer();
   }
 
-  // Text to text — return as-is
   return data;
 }

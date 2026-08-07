@@ -4,73 +4,48 @@
   "executionRoleArn": "arn:aws:iam::529745007887:role/LabRole",
   "networkMode": "awsvpc",
   "containerDefinitions": [
-      {
-          "name": "fragments-container",
-          "image": "lamritha/fragments:latest",
-          "cpu": 256,
-          "memoryReservation": 512,
-          "essential": true,
-          "portMappings": [
-              {
-                  "containerPort": 8080,
-                  "hostPort": 8080,
-                  "protocol": "tcp",
-                  "name": "fragments-container-8080-tcp",
-                  "appProtocol": "http"
-              }
-          ],
-          "environment": [
-              {
-                  "name": "AWS_COGNITO_POOL_ID",
-                  "value": "us-east-2_78iu5xWVp"
-              },
-              {
-                  "name": "AWS_COGNITO_CLIENT_ID",
-                  "value": "4ig6pt7mn227q2jqosrtmgba6k"
-              },
-              {
-                  "name": "AWS_REGION",
-                  "value": "us-east-2"
-              },
-              {
-                  "name": "AWS_S3_BUCKET_NAME",
-                  "value": "lamritha-fragments"
-              },
-              {
-                  "name": "AWS_DYNAMODB_TABLE_NAME",
-                  "value": "fragments"
-              },
-              {
-                  "name": "PORT",
-                  "value": "8080"
-              },
-              {
-                  "name": "NODE_ENV",
-                  "value": "production"
-              },
-              {
-                  "name": "FRAGMENTS_LOG_LEVEL",
-                  "value": "debug"
-              }
-          ],
-          "logConfiguration": {
-              "logDriver": "awslogs",
-              "options": {
-                  "awslogs-group": "/ecs/fragments-task",
-                  "awslogs-create-group": "true",
-                  "awslogs-region": "us-east-2",
-                  "awslogs-stream-prefix": "ecs"
-              }
-          }
+    {
+      "name": "fragments-container",
+      "image": "lamritha/fragments:latest",
+      "cpu": 256,
+      "memoryReservation": 512,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp",
+          "name": "fragments-container-8080-tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "environment": [
+        { "name": "AWS_COGNITO_POOL_ID", "value": "us-east-2_78iu5xWVp" },
+        { "name": "AWS_COGNITO_CLIENT_ID", "value": "4ig6pt7mn227q2jqosrtmgba6k" },
+        { "name": "AWS_REGION", "value": "us-east-2" },
+        { "name": "AWS_S3_BUCKET_NAME", "value": "lamritha-fragments-east2" },
+        { "name": "AWS_DYNAMODB_TABLE_NAME", "value": "fragments" },
+        { "name": "PORT", "value": "8080" },
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "FRAGMENTS_LOG_LEVEL", "value": "debug" },
+        { "name": "API_URL", "value": "https://fragments.alingeswaran1.mystudentproject.ca" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/fragments-task",
+          "awslogs-create-group": "true",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
       }
+    }
   ],
-  "requiresCompatibilities": [
-      "FARGATE"
-  ],
+  "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
   "runtimePlatform": {
-      "cpuArchitecture": "X86_64",
-      "operatingSystemFamily": "LINUX"
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
   }
 }
